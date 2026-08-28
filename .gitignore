@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# macOS
+.DS_Store
+
+# Downloaded/generated sanctions data (rebuilt via update_lists.py)
+backend/data/
+
+# Runtime artifacts
+backend/audit/
+backend/reports/
+backend/logs/
+backend/snapshots/
+backend/demo/
+*.db
+*.db-wal
+*.db-shm
+
+# Secrets
+.env
+.env.*

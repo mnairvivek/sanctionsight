@@ -1,0 +1,42 @@
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+requests
+spacy
+trafilatura
+beautifulsoup4
+rapidfuzz
+google-genai
+PyMuPDF
+
+# Phase 1: data & audit foundation
+sqlalchemy>=2.0
+alembic>=1.13
+pydantic>=2.0
+
+# Phase 3: HITL analyst workflow
+pyjwt>=2.8
+passlib[bcrypt]>=1.7.4
+bcrypt<4.1  # passlib 1.7.x reads bcrypt.__about__ which 4.1+ removed
+python-multipart>=0.0.6
+
+# Phase 5: recall + multilingual
+# spaCy model itself is pulled via `python -m spacy download en_core_web_lg`
+# (not a pip-installable dep). Sized ~560MB. The engine auto-downloads on
+# first run via `_load_spacy_model()`. Set SANCTIONSIGHT_SPACY_MODEL to
+# `en_core_web_trf` for transformer-grade accuracy, `en_core_web_sm` for
+# constrained environments.
+langdetect>=1.0.9
+
+# NLP redesign (Tracks A+B): transformer spaCy + zero-shot NLI. Both are
+# optional at runtime — the engine falls back to the lg/sm spaCy path + keyword
+# scoring when these aren't installed or GPU isn't present. torch is listed
+# CPU-only here; on the GCP Cloud Run GPU deploy, install the CUDA wheel:
+#   pip install torch --index-url https://download.pytorch.org/whl/cu121
+# then `python -m spacy download en_core_web_trf`.
+transformers>=4.40
+torch>=2.2
+
+# Tests
+pytest>=7.4
+pytest-asyncio>=0.23
+httpx>=0.25

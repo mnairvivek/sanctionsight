@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SanctionSight — AI-Augmented Sanctions Investigation</title>
+<meta name="description" content="AI-powered OSINT for sanctions compliance. Investigate entities across OFAC, EU, UN, OFSI, and BIS/EAR in minutes — not days.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+<style>
+/* ===================================================================
+   CSS VARIABLES — SanctionSight Brand System (White Background Edition)
+   =================================================================== */
+:root {
+  --navy: #0B1222;
+  --navy-mid: #111B2E;
+  --navy-light: #162035;
+  --surface: #FFFFFF;
+  --surface-warm: #F7F8FA;
+  --surface-alt: #F0F2F6;
+  --teal: #00B894;
+  --teal-bright: #00D4AA;
+  --teal-dim: #009B7D;
+  --teal-glow: rgba(0, 184, 148, 0.10);
+  --teal-glow-strong: rgba(0, 184, 148, 0.18);
+  --brand-blue: #3B6FA0;
+  --brand-blue-light: rgba(59, 111, 160, 0.08);
+  --brand-gold: #C8993E;
+  --brand-gold-light: rgba(200, 153, 62, 0.10);
+  --amber: #E8930C;
+  --amber-dim: rgba(232, 147, 12, 0.10);
+  --red: #D63031;
+  --red-dim: rgba(214, 48, 49, 0.08);
+  --green: #27AE60;
+  --green-dim: rgba(39, 174, 96, 0.08);
+  --text-dark: #0B1222;
+  --text-body: #3D4555;
+  --text-muted: #7B849A;
+  --text-light: #E8ECF1;
+  --border: #E2E6ED;
+  --border-subtle: rgba(0,0,0,0.06);
+  --shadow-xs: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-sm: 0 1px 4px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,0.10);
+  --shadow-xl: 0 20px 60px rgba(0,0,0,0.12);
+  --shadow-glow: 0 0 40px rgba(0, 184, 148, 0.12);
+  --radius: 8px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-2xl: 28px;
+  --max-w: 1200px;
+  --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===================================================================
+   RESET & BASE
+   =================================================================== */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  color: var(--text-dark);
+  background: var(--surface);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; }
+img { max-width: 100%; display: block; }
+code, .mono { font-family: 'JetBrains Mono', monospace; }
+
+/* ===================================================================
+   NAVIGATION
+   =================================================================== */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-bottom: 1px solid var(--border);
+  transition: var(--transition);
+}
+.nav.scrolled {
+  box-shadow: var(--shadow-sm);
+}
+.nav-inner {
+  max-width: var(--max-w); margin: 0 auto;
+  padding: 0 2rem; height: 100px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo { display: flex; align-items: center; gap: 0; }
+.nav-logo img { height: 100px; width: auto; }
+.nav-links { display: flex; align-items: center; gap: 2.25rem; }
+.nav-links a {
+  color: var(--text-muted); font-size: 0.9rem; font-weight: 500;
+  transition: color 0.2s; position: relative;
+}
+.nav-links a:hover { color: var(--text-dark); }
+.nav-links a.active { color: var(--teal); }
+.nav-cta {
+  background: var(--navy); color: white; font-weight: 600;
+  padding: 0.65rem 1.5rem; border-radius: 999px; font-size: 0.875rem;
+  transition: all 0.25s; letter-spacing: 0.01em;
+  box-shadow: var(--shadow-sm);
+}
+.nav-cta:hover {
+  background: var(--navy-mid); transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+.nav-mobile-toggle {
+  display: none; color: var(--text-dark); font-size: 1.5rem;
+  padding: 0.5rem;
+}
+
+/* ===================================================================
+   HERO SECTION
+   =================================================================== */
+.hero {
+  position: relative; background: var(--surface);
+  padding: 11rem 2rem 6rem; overflow: hidden;
+  min-height: 92vh; display: flex; align-items: center;
+}
+.hero-bg {
+  position: absolute; inset: 0; opacity: 0.6;
+  background:
+    radial-gradient(ellipse 900px 700px at 15% 40%, rgba(0,184,148,0.06), transparent),
+    radial-gradient(ellipse 700px 500px at 85% 25%, rgba(59,111,160,0.06), transparent),
+    radial-gradient(ellipse 500px 400px at 55% 85%, rgba(200,153,62,0.04), transparent);
+}
+/* Subtle dot grid */
+.hero-grid {
+  position: absolute; inset: 0; opacity: 0.35;
+  background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+/* Floating accent shapes */
+.hero-shapes {
+  position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+}
+.shape {
+  position: absolute; border-radius: 50%;
+  opacity: 0; animation: shapeFloat 10s ease-in-out infinite;
+}
+.shape:nth-child(1) {
+  width: 300px; height: 300px; top: 10%; right: -5%;
+  background: radial-gradient(circle, var(--teal-glow), transparent 70%);
+  animation-delay: 0s;
+}
+.shape:nth-child(2) {
+  width: 200px; height: 200px; bottom: 15%; left: 5%;
+  background: radial-gradient(circle, var(--brand-blue-light), transparent 70%);
+  animation-delay: 3s;
+}
+.shape:nth-child(3) {
+  width: 150px; height: 150px; top: 50%; left: 40%;
+  background: radial-gradient(circle, var(--brand-gold-light), transparent 70%);
+  animation-delay: 6s;
+}
+@keyframes shapeFloat {
+  0%, 100% { opacity: 0; transform: scale(0.8) translateY(20px); }
+  30% { opacity: 0.7; }
+  50% { opacity: 1; transform: scale(1.1) translateY(-10px); }
+  70% { opacity: 0.5; }
+}
+
+.hero-content {
+  position: relative; z-index: 2;
+  max-width: 760px; margin: 0 auto; width: 100%;
+  text-align: center;
+}
+.hero-text h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2.4rem, 4.5vw, 3.5rem);
+  font-weight: 800; color: var(--text-dark);
+  line-height: 1.15; letter-spacing: -0.03em;
+  margin-bottom: 1.5rem;
+}
+.hero-text h1 .accent {
+  background: linear-gradient(135deg, var(--teal), var(--brand-blue));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero-text p {
+  font-size: 1.1rem; color: var(--text-body);
+  line-height: 1.75; margin-bottom: 2.5rem; max-width: 600px; margin-left: auto; margin-right: auto;
+}
+.hero-actions { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; justify-content: center; }
+.btn-primary {
+  background: var(--navy); color: white;
+  padding: 0.95rem 2.2rem; border-radius: 999px;
+  font-weight: 700; font-size: 1rem;
+  transition: all 0.25s; letter-spacing: 0.01em;
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  box-shadow: var(--shadow-md);
+}
+.btn-primary:hover {
+  background: var(--navy-mid); transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+.btn-secondary {
+  color: var(--text-muted); font-weight: 500; font-size: 0.95rem;
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  transition: color 0.2s;
+}
+.btn-secondary:hover { color: var(--teal); }
+.btn-secondary svg { transition: transform 0.2s; }
+.btn-secondary:hover svg { transform: translateX(3px); }
+
+/* Hero right — mock investigation UI */
+.hero-demo {
+  background: var(--navy);
+  border-radius: var(--radius-2xl);
+  padding: 2rem; position: relative;
+  box-shadow: var(--shadow-xl), 0 0 100px rgba(0,0,0,0.08);
+}
+.hero-demo-bar {
+  display: flex; gap: 7px; margin-bottom: 1.5rem;
+}
+.hero-demo-bar span {
+  width: 11px; height: 11px; border-radius: 50%;
+}
+.hero-demo-bar span:nth-child(1) { background: #FF5F57; }
+.hero-demo-bar span:nth-child(2) { background: #FFBD2E; }
+.hero-demo-bar span:nth-child(3) { background: #28CA42; }
+.demo-input-row {
+  display: flex; gap: 0.75rem; margin-bottom: 1.5rem;
+}
+.demo-input {
+  flex: 1; background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius);
+  padding: 0.8rem 1rem; color: var(--text-light);
+  font-size: 0.88rem; font-family: 'JetBrains Mono', monospace;
+}
+.demo-input::placeholder { color: var(--text-muted); opacity: 0.5; }
+.demo-run-btn {
+  background: var(--teal-bright); color: var(--navy);
+  padding: 0.8rem 1.5rem; border-radius: var(--radius);
+  font-weight: 700; font-size: 0.85rem;
+  white-space: nowrap; letter-spacing: 0.01em;
+}
+.demo-results {
+  display: flex; flex-direction: column; gap: 0.55rem;
+}
+.demo-result-line {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.6rem 0.85rem;
+  background: rgba(255,255,255,0.025);
+  border-radius: var(--radius);
+  border-left: 3px solid transparent;
+  font-size: 0.8rem; color: rgba(255,255,255,0.55);
+  opacity: 0; animation: lineReveal 0.5s ease forwards;
+}
+.demo-result-line:nth-child(1) { animation-delay: 0.8s; border-left-color: var(--green); }
+.demo-result-line:nth-child(2) { animation-delay: 1.2s; border-left-color: var(--amber); }
+.demo-result-line:nth-child(3) { animation-delay: 1.6s; border-left-color: var(--red); }
+.demo-result-line:nth-child(4) { animation-delay: 2.0s; border-left-color: var(--green); }
+.demo-result-line:nth-child(5) { animation-delay: 2.4s; border-left-color: var(--teal-bright); }
+@keyframes lineReveal {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.demo-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+.demo-dot.green { background: var(--green); }
+.demo-dot.amber { background: var(--amber); }
+.demo-dot.red { background: var(--red); }
+.demo-dot.teal { background: var(--teal-bright); }
+.demo-label { flex: 1; }
+.demo-badge {
+  font-size: 0.68rem; font-weight: 600; padding: 0.15rem 0.55rem;
+  border-radius: 999px; text-transform: uppercase; letter-spacing: 0.04em;
+}
+.demo-badge.clear { background: var(--green-dim); color: var(--green); }
+.demo-badge.review { background: var(--amber-dim); color: var(--amber); }
+.demo-badge.high { background: var(--red-dim); color: var(--red); }
+
+/* ===================================================================
+   STATS BAR
+   =================================================================== */
+.stats-bar {
+  background: var(--surface-warm);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 2.5rem 2rem;
+}
+.stats-inner {
+  max-width: var(--max-w); margin: 0 auto;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem;
+  text-align: center;
+}
+.stat-item .stat-number {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.8rem; font-weight: 500; color: var(--navy);
+  margin-bottom: 0.25rem;
+}
+.stat-item .stat-label {
+  font-size: 0.78rem; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500;
+}
+
+/* ===================================================================
+   SECTION SYSTEM
+   =================================================================== */
+.section { padding: 6rem 2rem; }
+.section-white { background: var(--surface); }
+.section-light { background: var(--surface-warm); }
+.section-dark { background: var(--navy); color: var(--text-light); }
+.section-inner { max-width: var(--max-w); margin: 0 auto; }
+.section-header {
+  text-align: center; margin-bottom: 4rem;
+}
+.section-header .label {
+  font-size: 0.72rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.14em; color: var(--teal); margin-bottom: 0.75rem;
+  display: inline-block;
+}
+.section-header h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  font-weight: 700; line-height: 1.2;
+  letter-spacing: -0.02em; color: var(--text-dark);
+}
+.section-dark .section-header h2 { color: var(--text-light); }
+.section-header p {
+  max-width: 600px; margin: 1rem auto 0;
+  font-size: 1.05rem; color: var(--text-body);
+  line-height: 1.7;
+}
+.section-dark .section-header p { color: var(--text-muted); }
+
+/* ===================================================================
+   PROBLEM SECTION
+   =================================================================== */
+.problems-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.75rem;
+}
+.problem-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 2.25rem;
+  transition: all 0.3s;
+}
+.problem-card:hover {
+  transform: translateY(-5px);
+  border-color: var(--teal);
+  box-shadow: var(--shadow-lg), 0 0 0 1px var(--teal-glow);
+}
+.problem-icon {
+  width: 52px; height: 52px;
+  background: var(--teal-glow);
+  border-radius: var(--radius-lg);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 1.25rem;
+  font-size: 1.35rem;
+}
+.problem-card h3 {
+  font-size: 1.1rem; font-weight: 700;
+  color: var(--text-dark); margin-bottom: 0.75rem;
+}
+.problem-card p {
+  font-size: 0.9rem; color: var(--text-body); line-height: 1.65;
+}
+
+/* ===================================================================
+   HOW IT WORKS
+   =================================================================== */
+.steps-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 2.5rem;
+  position: relative;
+}
+.steps-grid::before {
+  content: ''; position: absolute;
+  top: 38px; left: 16.67%; right: 16.67%; height: 2px;
+  background: linear-gradient(90deg, var(--border), var(--teal), var(--border));
+  opacity: 0.4;
+}
+.step-card { text-align: center; position: relative; }
+.step-number {
+  width: 58px; height: 58px; margin: 0 auto 1.5rem;
+  background: var(--navy);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.2rem; font-weight: 700; color: var(--teal-bright);
+  position: relative; z-index: 2;
+  box-shadow: var(--shadow-md);
+}
+.step-card h3 {
+  font-size: 1.15rem; font-weight: 700;
+  margin-bottom: 0.75rem; color: var(--text-dark);
+}
+.step-card p {
+  font-size: 0.9rem; color: var(--text-body); line-height: 1.65;
+  max-width: 320px; margin: 0 auto;
+}
+.step-tech {
+  display: inline-block; margin-top: 1rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem; color: var(--teal-dim);
+  background: var(--teal-glow);
+  padding: 0.3rem 0.8rem; border-radius: 999px;
+  font-weight: 500;
+}
+
+/* ===================================================================
+   REGIMES SECTION
+   =================================================================== */
+.regimes-grid {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 1.25rem;
+}
+.regime-card {
+  background: var(--navy-light);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: var(--radius-xl);
+  padding: 2rem 1.25rem;
+  text-align: center;
+  transition: all 0.3s;
+}
+.regime-card:hover {
+  border-color: var(--teal-bright);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+}
+.regime-flag { font-size: 2.2rem; margin-bottom: 0.75rem; }
+.regime-card h3 {
+  font-size: 1rem; font-weight: 700; color: var(--teal-bright);
+  margin-bottom: 0.5rem;
+}
+.regime-card p {
+  font-size: 0.78rem; color: rgba(255,255,255,0.45); line-height: 1.5;
+}
+
+/* ===================================================================
+   DIFFERENTIATORS
+   =================================================================== */
+.diff-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.75rem;
+}
+.diff-card {
+  display: flex; gap: 1.25rem; align-items: flex-start;
+  padding: 2rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  transition: all 0.3s;
+}
+.diff-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--teal);
+  box-shadow: var(--shadow-md);
+}
+.diff-icon {
+  width: 48px; height: 48px; flex-shrink: 0;
+  background: var(--teal-glow);
+  border-radius: var(--radius-lg);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.25rem;
+}
+.diff-card h3 {
+  font-size: 1.05rem; font-weight: 700;
+  color: var(--text-dark); margin-bottom: 0.5rem;
+}
+.diff-card p {
+  font-size: 0.88rem; color: var(--text-body); line-height: 1.65;
+}
+
+/* ===================================================================
+   PRICING
+   =================================================================== */
+.pricing-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;
+  max-width: 960px; margin: 0 auto;
+}
+.pricing-card {
+  background: var(--surface); border: 2px solid var(--border);
+  border-radius: var(--radius-2xl); padding: 2.5rem 2rem;
+  position: relative; transition: all 0.3s;
+}
+.pricing-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-lg); }
+.pricing-card.featured {
+  border-color: var(--navy);
+  box-shadow: 0 0 0 1px var(--navy), var(--shadow-md);
+}
+.pricing-popular {
+  position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+  background: var(--navy); color: white;
+  font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0.3rem 1.1rem; border-radius: 999px;
+}
+.pricing-card h3 {
+  font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem;
+  color: var(--text-dark);
+}
+.pricing-price {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 2.5rem; font-weight: 700; color: var(--text-dark);
+  margin-bottom: 0.25rem;
+}
+.pricing-price .period { font-size: 0.9rem; font-weight: 400; color: var(--text-muted); }
+.pricing-desc { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem; }
+.pricing-features { list-style: none; margin-bottom: 2rem; }
+.pricing-features li {
+  padding: 0.4rem 0; font-size: 0.875rem; color: var(--text-body);
+  display: flex; align-items: center; gap: 0.6rem;
+}
+.pricing-features li::before {
+  content: '✓'; color: var(--teal); font-weight: 700; font-size: 0.9rem;
+}
+.pricing-features li.no { color: var(--text-muted); }
+.pricing-features li.no::before { content: '—'; color: var(--border); }
+.pricing-btn {
+  display: block; width: 100%; padding: 0.9rem; border-radius: var(--radius-lg);
+  font-weight: 600; font-size: 0.9rem;
+  text-align: center; transition: all 0.25s;
+}
+.pricing-btn-primary {
+  background: var(--navy); color: white;
+}
+.pricing-btn-primary:hover {
+  background: var(--navy-mid); box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+.pricing-btn-outline {
+  border: 2px solid var(--border); color: var(--text-dark);
+}
+.pricing-btn-outline:hover {
+  border-color: var(--navy); color: var(--navy);
+}
+
+/* ===================================================================
+   CTA SECTION
+   =================================================================== */
+.cta-section {
+  background: var(--navy);
+  padding: 6.5rem 2rem;
+  text-align: center;
+  position: relative; overflow: hidden;
+}
+.cta-section::before {
+  content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 600px 400px at 30% 50%, rgba(0,184,148,0.06), transparent),
+    radial-gradient(ellipse 400px 300px at 70% 50%, rgba(59,111,160,0.06), transparent);
+}
+.cta-section h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2rem, 3.5vw, 2.8rem);
+  color: var(--text-light); font-weight: 700;
+  margin-bottom: 1rem; position: relative;
+}
+.cta-section p {
+  color: var(--text-muted); font-size: 1.05rem;
+  margin-bottom: 2.5rem; position: relative;
+}
+.cta-section .btn-primary {
+  position: relative; font-size: 1.05rem; padding: 1rem 2.5rem;
+  background: var(--teal-bright); color: var(--navy);
+  box-shadow: 0 8px 32px rgba(0,212,170,0.25);
+}
+.cta-section .btn-primary:hover {
+  background: #00E8BC; transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0,212,170,0.35);
+}
+.cta-trust {
+  margin-top: 2.5rem; display: flex; gap: 2.5rem;
+  justify-content: center; flex-wrap: wrap;
+  position: relative;
+}
+.cta-trust span {
+  font-size: 0.78rem; color: rgba(255,255,255,0.4);
+  display: flex; align-items: center; gap: 0.4rem;
+}
+
+/* ===================================================================
+   FOOTER
+   =================================================================== */
+.footer {
+  background: var(--navy);
+  border-top: 1px solid rgba(255,255,255,0.05);
+  padding: 4rem 2rem 2rem;
+}
+.footer-inner {
+  max-width: var(--max-w); margin: 0 auto;
+  display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 3rem;
+  margin-bottom: 3rem;
+}
+.footer-brand p {
+  font-size: 0.85rem; color: rgba(255,255,255,0.4);
+  line-height: 1.65; margin-top: 1rem; max-width: 300px;
+}
+.footer-col h4 {
+  font-size: 0.72rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.12em;
+  color: rgba(255,255,255,0.35); margin-bottom: 1rem;
+}
+.footer-col a {
+  display: block; padding: 0.3rem 0;
+  font-size: 0.875rem; color: rgba(255,255,255,0.45);
+  transition: color 0.2s;
+}
+.footer-col a:hover { color: var(--teal-bright); }
+.footer-bottom {
+  max-width: var(--max-w); margin: 0 auto;
+  padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.05);
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 1rem;
+}
+.footer-bottom p {
+  font-size: 0.78rem; color: rgba(255,255,255,0.3);
+}
+
+/* ===================================================================
+   RESPONSIVE
+   =================================================================== */
+@media (max-width: 1024px) {
+  .hero-content { grid-template-columns: 1fr; }
+  .hero-demo { max-width: 520px; }
+  .regimes-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 768px) {
+  .nav-links { display: none; }
+  .nav-mobile-toggle { display: block; }
+  .nav-links.open {
+    display: flex; flex-direction: column;
+    position: absolute; top: 120px; left: 0; right: 0;
+    background: var(--surface); padding: 1.5rem 2rem;
+    border-bottom: 1px solid var(--border);
+    box-shadow: var(--shadow-md);
+    gap: 0.5rem;
+  }
+  .nav-links.open a { padding: 0.6rem 0; }
+  .nav-links.open .nav-cta { text-align: center; margin-top: 0.5rem; }
+  .hero { padding: 8rem 1.5rem 4rem; min-height: auto; }
+  .hero-text h1 { font-size: 2rem; }
+  .hero-demo { display: none; }
+  .section { padding: 4rem 1.5rem; }
+  .problems-grid, .steps-grid { grid-template-columns: 1fr; }
+  .steps-grid::before { display: none; }
+  .diff-grid { grid-template-columns: 1fr; }
+  .regimes-grid { grid-template-columns: repeat(2, 1fr); }
+  .pricing-grid { grid-template-columns: 1fr; max-width: 400px; }
+  .stats-inner { grid-template-columns: repeat(2, 1fr); gap: 1.25rem; }
+  .footer-inner { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 480px) {
+  .regimes-grid { grid-template-columns: 1fr; }
+  .stats-inner { grid-template-columns: 1fr 1fr; }
+  .footer-inner { grid-template-columns: 1fr; }
+}
+
+/* ===================================================================
+   SCROLLBAR
+   =================================================================== */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ===================================================================
+   ANIMATIONS
+   =================================================================== */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-up {
+  opacity: 0; transform: translateY(24px);
+}
+.fade-up.visible {
+  animation: fadeUp 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+</style>
+</head>
+<body>
+
+<!-- ================================================================
+     NAVIGATION
+     ================================================================ -->
+<nav class="nav" id="nav">
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">
+      <img src="/static/Logo.png" alt="SanctionSight">
+    </a>
+    <div class="nav-links" id="navLinks">
+      <a href="#how-it-works">How It Works</a>
+      <a href="#regimes">Regimes</a>
+      <a href="#pricing">Pricing</a>
+      <a href="/app">Investigate</a>
+      <a href="/app" class="nav-cta">Run Investigation →</a>
+    </div>
+    <button class="nav-mobile-toggle" onclick="toggleMobileNav()" aria-label="Menu">☰</button>
+  </div>
+</nav>
+
+<!-- ================================================================
+     HERO
+     ================================================================ -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-shapes">
+    <div class="shape"></div>
+    <div class="shape"></div>
+    <div class="shape"></div>
+  </div>
+  <div class="hero-content">
+    <div class="hero-text">
+      <h1>The Open Web Is Vast.<br><span class="accent">Your Investigation Doesn't Have to Be.</span></h1>
+      <p>SanctionSight uses AI-powered web scraping, NLP entity matching, and open-source intelligence to find sanctions nexus in minutes.</p>
+      <div class="hero-actions">
+        <a href="/app" class="btn-primary">
+          Run Your First Investigation
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10m0 0L9 4m4 4L9 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <a href="#how-it-works" class="btn-secondary">
+          See How It Works
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10m0 0L9 4m4 4L9 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <div class="stats-inner">
+    <div class="stat-item fade-up">
+      <div class="stat-number">5</div>
+      <div class="stat-label">Sanctions Regimes</div>
+    </div>
+    <div class="stat-item fade-up" style="animation-delay:0.1s">
+      <div class="stat-number">8</div>
+      <div class="stat-label">Jurisdictions Scanned</div>
+    </div>
+    <div class="stat-item fade-up" style="animation-delay:0.2s">
+      <div class="stat-number">&lt;5min</div>
+      <div class="stat-label">Avg Investigation</div>
+    </div>
+    <div class="stat-item fade-up" style="animation-delay:0.3s">
+      <div class="stat-number">NLP</div>
+      <div class="stat-label">Entity Matching</div>
+    </div>
+  </div>
+</div>
+
+<!-- PROBLEM STATEMENT -->
+<section class="section section-light" id="problems">
+  <div class="section-inner">
+    <div class="section-header fade-up">
+      <div class="label">The Challenge</div>
+      <h2>Manual OSINT Investigations Are<br>Drowning Compliance Teams</h2>
+    </div>
+    <div class="problems-grid">
+      <div class="problem-card fade-up">
+        <div class="problem-icon">⏳</div>
+        <h3>Hours Lost to Manual Searching</h3>
+        <p>Analysts spend 60–80% of investigation time on repetitive open-web searches across multiple browsers and tabs, looking for sanctions nexus one country at a time.</p>
+      </div>
+      <div class="problem-card fade-up" style="animation-delay:0.1s">
+        <div class="problem-icon">🌐</div>
+        <h3>Inconsistent Coverage Across Regimes</h3>
+        <p>OFAC, EU, UN, OFSI, and BIS/EAR each require different search strategies and source knowledge. Coverage gaps create compliance risk.</p>
+      </div>
+      <div class="problem-card fade-up" style="animation-delay:0.2s">
+        <div class="problem-icon">📋</div>
+        <h3>No Audit Trail for Open-Web Research</h3>
+        <p>Regulators increasingly expect documented, reproducible investigation methodology. Manual browser research leaves no structured evidence.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="section section-white" id="how-it-works">
+  <div class="section-inner">
+    <div class="section-header fade-up">
+      <div class="label">How It Works</div>
+      <h2>From Entity Name to Sanctions Nexus<br>in Three Steps</h2>
+    </div>
+    <div class="steps-grid">
+      <div class="step-card fade-up">
+        <div class="step-number">1</div>
+        <h3>Enter Your Target</h3>
+        <p>Input any website URL, business name, or legal entity. SanctionSight's NLP engine handles transliterations, aliases, and fuzzy matches automatically.</p>
+      </div>
+      <div class="step-card fade-up" style="animation-delay:0.15s">
+        <div class="step-number">2</div>
+        <h3>AI Scours the Open Web</h3>
+        <p>Google Custom Search API and purpose-built web scrapers search thousands of sources — simultaneously checking all major sanctioned jurisdictions.</p>
+      </div>
+      <div class="step-card fade-up" style="animation-delay:0.3s">
+        <div class="step-number">3</div>
+        <h3>Review Your Report</h3>
+        <p>Receive a structured investigation report with matched entities, source citations, confidence scores, and an AI-generated compliance verdict.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- REGIMES -->
+<section class="section section-dark" id="regimes">
+  <div class="section-inner">
+    <div class="section-header fade-up">
+      <div class="label">Coverage</div>
+      <h2>Eight Jurisdictions. One Investigation.</h2>
+    </div>
+    <div class="regimes-grid">
+      <div class="regime-card fade-up">
+        <div class="regime-flag">🇺🇸</div>
+        <h3>OFAC</h3>
+        <p>SDN List, Sectoral Sanctions, Non-SDN Lists</p>
+      </div>
+      <div class="regime-card fade-up" style="animation-delay:0.08s">
+        <div class="regime-flag">🇪🇺</div>
+        <h3>EU</h3>
+        <p>EU Consolidated Sanctions List</p>
+      </div>
+      <div class="regime-card fade-up" style="animation-delay:0.16s">
+        <div class="regime-flag">🇺🇳</div>
+        <h3>UN</h3>
+        <p>UN Security Council Sanctions</p>
+      </div>
+      <div class="regime-card fade-up" style="animation-delay:0.24s">
+        <div class="regime-flag">🇬🇧</div>
+        <h3>OFSI</h3>
+        <p>UK Financial Sanctions List</p>
+      </div>
+      <div class="regime-card fade-up" style="animation-delay:0.32s">
+        <div class="regime-flag">🛡️</div>
+        <h3>BIS/EAR</h3>
+        <p>Entity List, Denied Persons, Unverified</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DIFFERENTIATORS -->
+<section class="section section-white">
+  <div class="section-inner">
+    <div class="section-header fade-up">
+      <div class="label">Why SanctionSight</div>
+      <h2>Built to Augment Investigators,<br>Not Replace Them</h2>
+    </div>
+    <div class="diff-grid">
+      <div class="diff-card fade-up">
+        <div class="diff-icon">🧠</div>
+        <div>
+          <h3>Augments, Never Automates</h3>
+          <p>Every finding requires human review. We surface intelligence; you make decisions. SanctionSight is a tool for your judgment, not a substitute.</p>
+        </div>
+      </div>
+      <div class="diff-card fade-up" style="animation-delay:0.1s">
+        <div class="diff-icon">🔍</div>
+        <div>
+          <h3>Transparent Methodology</h3>
+          <p>See exactly which sources were searched, what NLP models matched, and why. Full audit trail for every investigation — no black box.</p>
+        </div>
+      </div>
+      <div class="diff-card fade-up" style="animation-delay:0.15s">
+        <div class="diff-icon">⚡</div>
+        <div>
+          <h3>Self-Serve from Day One</h3>
+          <p>No sales calls, no enterprise contracts, no waiting. Run your first investigation in under 2 minutes — start free, upgrade when ready.</p>
+        </div>
+      </div>
+      <div class="diff-card fade-up" style="animation-delay:0.2s">
+        <div class="diff-icon">🔓</div>
+        <div>
+          <h3>Built on Proven Open-Source AI</h3>
+          <p>spaCy NLP, rapidfuzz matching, Google Custom Search — no proprietary black-box algorithms. You can understand and explain every result.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="section section-light" id="pricing">
+  <div class="section-inner">
+    <div class="section-header fade-up">
+      <div class="label">Pricing</div>
+      <h2>Transparent Pricing for<br>Real Investigations</h2>
+      <p>No credit card required. No sales call needed.</p>
+    </div>
+    <div class="pricing-grid">
+      <div class="pricing-card fade-up">
+        <h3>Free Trial</h3>
+        <div class="pricing-price">$0</div>
+        <div class="pricing-desc">Get started risk-free</div>
+        <ul class="pricing-features">
+          <li>5 full investigations</li>
+          <li>All 8 jurisdictions</li>
+          <li>AI-generated verdict</li>
+          <li>HTML report export</li>
+          <li class="no">API access</li>
+          <li class="no">Priority support</li>
+        </ul>
+        <a href="/app" class="pricing-btn pricing-btn-outline">Start Free</a>
+      </div>
+      <div class="pricing-card featured fade-up" style="animation-delay:0.1s">
+        <div class="pricing-popular">Most Popular</div>
+        <h3>Analyst</h3>
+        <div class="pricing-price">$49<span class="period">/mo</span></div>
+        <div class="pricing-desc">For individual compliance analysts</div>
+        <ul class="pricing-features">
+          <li>50 investigations/month</li>
+          <li>All 8 jurisdictions</li>
+          <li>AI-generated verdict</li>
+          <li>PDF + HTML export</li>
+          <li>Name co-occurrence search</li>
+          <li>Email support</li>
+        </ul>
+        <a href="/app" class="pricing-btn pricing-btn-primary">Subscribe</a>
+      </div>
+      <div class="pricing-card fade-up" style="animation-delay:0.2s">
+        <h3>Enterprise</h3>
+        <div class="pricing-price">Custom</div>
+        <div class="pricing-desc">For teams &amp; organizations</div>
+        <ul class="pricing-features">
+          <li>Unlimited investigations</li>
+          <li>All 8 jurisdictions + custom</li>
+          <li>API access</li>
+          <li>Team workspace</li>
+          <li>Custom integrations</li>
+          <li>Dedicated support</li>
+        </ul>
+        <button class="pricing-btn pricing-btn-outline">Contact Us</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <h2>Your Next Investigation Starts Here</h2>
+  <a href="/app" class="btn-primary">
+    Start Your Free Investigation
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10m0 0L9 4m4 4L9 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </a>
+  <div class="cta-trust">
+    <span>🔒 256-bit encryption</span>
+    <span>🛡️ We never store investigation targets</span>
+    <span>📋 Full audit trail</span>
+  </div>
+</section>
+
+<!-- ================================================================
+     FOOTER
+     ================================================================ -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <p>AI-augmented open web investigation for sanctions compliance. Augmenting human judgment, never replacing it.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Product</h4>
+      <a href="#how-it-works">How It Works</a>
+      <a href="#regimes">Regimes Covered</a>
+      <a href="/app">Run Investigation</a>
+    </div>
+    <div class="footer-col">
+      <h4>Company</h4>
+      <a href="#">About</a>
+      <a href="#">Trust &amp; Security</a>
+      <a href="#">Contact</a>
+    </div>
+    <div class="footer-col">
+      <h4>Legal</h4>
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms of Service</a>
+      <a href="#">Data Handling</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>&copy; 2025 SanctionSight. All rights reserved.</p>
+    <p>This tool augments — never replaces — professional compliance judgment.</p>
+  </div>
+</footer>
+
+<!-- ================================================================
+     JAVASCRIPT
+     ================================================================ -->
+<script>
+// Mobile nav toggle
+function toggleMobileNav() {
+  document.getElementById('navLinks').classList.toggle('open');
+}
+function closeMobileNav() {
+  document.getElementById('navLinks').classList.remove('open');
+}
+
+// Smooth scroll for anchor links
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', function(e) {
+    const target = document.querySelector(this.getAttribute('href'));
+    if (target) {
+      e.preventDefault();
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      closeMobileNav();
+    }
+  });
+});
+
+// Nav shadow on scroll
+const nav = document.getElementById('nav');
+window.addEventListener('scroll', () => {
+  nav.classList.toggle('scrolled', window.scrollY > 20);
+}, { passive: true });
+
+// Scroll-triggered fade-up animations
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+      observer.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
